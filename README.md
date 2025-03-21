@@ -12,6 +12,8 @@
 
 - Python
 - FastAPI
+- SQLalchemy
+- Alembic
 - PostgreSQL
 - Docker
 
