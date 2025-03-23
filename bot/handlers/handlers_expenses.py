@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 import aiohttp
 from aiogram import types
@@ -8,6 +9,9 @@ from app.config import FASTAPI_URL
 from app.core.utils import get_categories, validate_date_with_pydantic, \
     edit_message_with_keyboard, create_keyboard
 from ..states import ExpenseForm
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 async def add_expense_command(callback_query: types.CallbackQuery, state: FSMContext):
@@ -196,31 +200,50 @@ async def process_end_date_for_category(message: types.Message, state: FSMContex
 
 
 async def show_expenses(callback_query: types.CallbackQuery):
+    data_parts = callback_query.data.split('_')
+    page = 1
+    if len(data_parts) >= 3:
+        try:
+            page = int(data_parts[-1])
+        except ValueError:
+            await callback_query.answer("Ошибка: неверный номер страницы.")
+            return
+
     user_id = callback_query.from_user.id
+    expenses_per_page = 10
+    offset = (page - 1) * expenses_per_page
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(f'{FASTAPI_URL}/expenses/user/{user_id}/expenses') as response:
+        async with session.get(f'{FASTAPI_URL}/expenses/user/{user_id}/expenses',
+                               params={'skip': offset, 'limit': expenses_per_page, 'order_by': 'desc'}) as response:
             if response.status == 200:
                 expenses = await response.json()
                 if expenses:
                     keyboard_buttons = [
-                        [InlineKeyboardButton(text=f'{expense['description'][:20]} - {expense['amount']}',
-                                              callback_data=f'delete_expense_{expense['id']}')]
-                        for expense in expenses[:10]
+                        [InlineKeyboardButton(
+                            text=f'{expense["description"][:20]} - {expense["amount"]}',
+                            callback_data=f'delete_expense_{expense["id"]}'
+                        ) for expense in expenses[i:i + 2]]
+                        for i in range(0, len(expenses), 2)
                     ]
+
+                    if len(expenses) == expenses_per_page:
+                        keyboard_buttons.append([InlineKeyboardButton(text='➡️ Следующая страница',
+                                                                      callback_data=f'show_expenses_{page + 1}')])
+                    if page > 1:
+                        keyboard_buttons.append([InlineKeyboardButton(text='⬅️ Предыдущая страница',
+                                                                      callback_data=f'show_expenses_{page - 1}')])
                     keyboard_buttons.append(
-                        [InlineKeyboardButton(text='🔙 Назад', callback_data='show_expense_actions')])
+                        [InlineKeyboardButton(text='🔙 Назад к меню', callback_data='show_expense_actions')])
                     keyboard = create_keyboard(keyboard_buttons)
-                    await callback_query.message.edit_text('Ваши расходы(Нажмите на расход для удаления):',
+                    await callback_query.message.edit_text('Ваши расходы (Нажмите на расход для удаления):',
                                                            reply_markup=keyboard)
                 else:
-                    keyboard = create_keyboard(
-                        [[InlineKeyboardButton(text='🔙 Назад', callback_data='show_expense_actions')]])
-                    await callback_query.message.edit_text('У вас пока нет расходов', reply_markup=keyboard)
+                    await callback_query.message.edit_text('У вас пока нет расходов', reply_markup=create_keyboard(
+                        [[InlineKeyboardButton(text='🔙 Назад', callback_data='show_expense_actions')]]))
             else:
-                keyboard = create_keyboard(
-                    [[InlineKeyboardButton(text='🔙 Назад', callback_data='show_expense_actions')]])
-                await callback_query.message.edit_text('Ошибка при получении расходов', reply_markup=keyboard)
+                await callback_query.message.edit_text('Ошибка при получении расходов', reply_markup=create_keyboard(
+                    [[InlineKeyboardButton(text='🔙 Назад', callback_data='show_expense_actions')]]))
 
     await callback_query.answer()
 
