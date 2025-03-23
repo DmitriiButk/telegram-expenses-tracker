@@ -11,11 +11,7 @@
 ## Используемые технологии
 
 - Python
-- SQLAlchemy
-- Alembic
-- Pydantic
 - FastAPI
-- Aiogram
 - PostgreSQL
 - Docker
 
@@ -81,10 +77,16 @@
 
 1. Запустите базу данных PostgreSQL и создайте необходимые таблицы.
 
-2. Запустите приложение FastAPI и Telegram-бота:
+2. Запустите приложение FastAPI:
 
     ```sh
-    python main.py
+    uvicorn main:app --port 8000
+    ```
+
+3. Запустите Telegram-бота:
+
+    ```sh
+    python bot.py
     ```
 
 ### С использованием Docker
