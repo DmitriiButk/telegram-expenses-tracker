@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 import aiohttp
 from aiogram import types
@@ -9,9 +8,6 @@ from app.config import FASTAPI_URL
 from app.core.utils import get_categories, validate_date_with_pydantic, \
     edit_message_with_keyboard, create_keyboard
 from ..states import ExpenseForm
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 
 async def add_expense_command(callback_query: types.CallbackQuery, state: FSMContext):
