@@ -30,6 +30,7 @@ def register_handlers(dp: Dispatcher):
     dp.callback_query.register(process_delete_category, lambda c: c.data.startswith("delete_category_"))
     dp.callback_query.register(show_categories, lambda c: c.data == "show_categories")
     dp.callback_query.register(show_expenses, lambda c: c.data == "show_expenses")
+    dp.callback_query.register(show_expenses, lambda c: c.data and c.data.startswith('show_expenses_'))
     dp.callback_query.register(process_delete_expense, lambda c: c.data.startswith("delete_expense_"))
     dp.callback_query.register(show_main_menu, lambda c: c.data == "main_menu")
     dp.callback_query.register(show_instructions, lambda c: c.data == "show_instructions")
