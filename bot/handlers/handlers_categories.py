@@ -13,8 +13,12 @@ async def show_categories(callback_query: types.CallbackQuery):
     categories = await get_categories(user_id)
 
     keyboard_buttons = [
-        [InlineKeyboardButton(text=category['name'], callback_data=f'delete_category_{category['id']}')]
-        for category in categories
+        [InlineKeyboardButton(text=categories[i]['name'], callback_data=f'delete_category_{categories[i]["id"]}'),
+         InlineKeyboardButton(text=categories[i + 1]['name'],
+                              callback_data=f'delete_category_{categories[i + 1]["id"]}')]
+        if i + 1 < len(categories) else
+        [InlineKeyboardButton(text=categories[i]['name'], callback_data=f'delete_category_{categories[i]["id"]}')]
+        for i in range(0, len(categories), 2)
     ]
 
     keyboard_buttons.append([InlineKeyboardButton(text='🔙 Назад', callback_data='show_category_actions')])
